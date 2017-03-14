@@ -1,0 +1,100 @@
+#include <iostream>
+using namespace std;
+#include <cmath>
+#include <stdio.h>
+#include <cstring>
+#define detac 0.00000000001//The variation of the constant c in the functions
+#define Pi 3.141592653589
+#define detat 0.001//The variation of the angle
+#define detafai 0.001//The variation of the angle
+#define C 21362799.26//The specific heat capacity of the plane
+#define a 0.65//The relative coefficient of radiation
+#define Ip 9092.5//The intensity of light
+#define sigma 0.92//The absorption factor of solar radiation
+#define double long double
+double solve_T_follow(double sita/*Angle*/,double c,double w,double fai)//Calculate T_follow
+{
+double T0;
+double o = 1/(3*a*5.6*pow(10.0,-8)/C*sita/w + c);
+T0 = pow(o,(double)1/3);
+return T0;
+}
+double solveT(double detax,double x0/*fist value*/,double y0/*fist value*/,double w,double
+*p,double fai,double figure)//Calculate T
+{
+if (x0 - Pi < detax)
+{
+double y1 = sigma*cos(fai)*Ip/C*sin(x0)*detax/w -
+pow(y0,4)*detax*a*5.6*pow(10.0,-8)/C/w + y0;
+figure += detat*detafai*y1*cos(fai);
+solveT(detax,x0+detax,y1,w,p,fai,figure);
+}
+else
+*p=y0;
+return figure;
+}
+double find_c(double detax,double x0/*fist value*/,double y0/*fist value*/,double w,double
+*p,double *c,double fai)//Find the constant
+{
+double figure=0;
+figure = solveT(detax,x0,y0,w,p,fai,figure);
+if(*p>solve_T_follow( Pi, *c,w,fai))
+{
+while(*p - solve_T_follow( Pi,*c,w,fai) > detac)
+{
+*c = *c - detac;
+figure = solveT(detax,x0,solve_T_follow(2*Pi,*c,w,fai),w,p,fai,figure);
+}
+}
+else
+{
+while(*p - solve_T_follow( Pi,*c,w,fai) < detac)
+{
+*c = *c + detac;
+figure = solveT(detax,x0,solve_T_follow(2*Pi,*c,w,fai),w,p,fai,figure);
+}
+}
+return figure;
+}
+double follow_data(double sita/*Angle*/,double c,double w,double fai)//Culculate the following
+datas
+{
+double figure=0;
+double T;
+while (2*Pi - sita > detat)
+{
+T = solve_T_follow( sita,c,w,fai);
+figure += detat*detafai*T*cos(fai);
+sita = sita + detat;
+}
+return figure;
+}
+double find (double fai,double w,double figure)
+{
+double T0 = solve_T_follow(2*Pi,0.0,w,fai);
+double y1;
+double c=0.0;
+figure = find_c(detat,0.0,T0, w,&y1,&c,fai);cout<<c<<endl;
+figure += follow_data(Pi,c, w,fai);
+return figure;
+}
+int main()
+{
+cout << "This progrem was used to solve the distribution of temperature in Problem B of
+University Physics Competition in 2013" << endl<<"Now it can be used to calculate the average
+tenmperature of a single light source illuminate graybody ."<< endl<<endl<<endl;
+double figure = 0;
+double w=6.576E-8;
+cout << "Please input the spin velocity w" << endl;
+cin >> w;
+cout << "The period of the planet is T = " << 2*Pi/w/3600<<"hours" << endl;
+cout << "Please waite...(Mabe several mimutes or hours...)"<<endl;
+double fai=0;
+do
+{
+figure += find(fai,w,figure);
+fai += detafai;
+}while (fai<Pi/2-detafai);
+cout << "The average temperature is "<<figure/Pi/2<<endl;
+return 0;
+}
