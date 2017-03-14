@@ -1,0 +1,109 @@
+计算特定纬度温度
+#include <iostream>
+using namespace std;
+#include <cmath>
+#include <stdio.h>
+#define detac 0.000000001//The variation of the constant c in the functions
+#define Pi 3.141592653589
+#define detat 0.001//The variation of the angle
+#define detafai 0.005//The variation of the angle
+#define C 21362799.26//The specific heat capacity of the plane
+#define a 0.65//The relative coefficient of radiation
+#define Ip 9092.5//The intensity of light
+#define double long double
+double solve_T_follow(double sita/*Angle*/,double c,double w,double fai,double
+sitax)//Calculate T_follow
+{
+double T0;
+double o = 1/(3*a*5.6*pow(10.0,-8)/C*sita/w + c);
+T0 = pow(o,(double)1/3);
+return T0;
+}
+void solveT(FILE *fp,double detax,double x0/*fist value*/,double y0/*fist value*/,double
+w,double *p,double fai,double sitax,double *linshiT)//Calculate T and write datas
+double y1 = y0;
+while(x0 - Pi < detax)
+{
+if(abs(x0-sitax)<detax/2.0)
+*linshiT = y1;
+y1 = cos(fai)*0.92*Ip/C*sin(x0)*detax/w - pow(y1,4)*detax*a*5.6*pow(10.0,-8)/C/w +
+y1;
+x0=x0+detax;
+}
+*p=y1;
+}
+void find_c(FILE *fp,double detax,double x0/*fist value*/,double y0/*fist value*/,double
+w,double *p,double *c,double fai,double sitax)//Find the constant
+{
+double linshiT=0.0;
+solveT(fp,detax,x0,y0,w,p,fai,sitax,&linshiT);
+if(*p>solve_T_follow( Pi, *c,w,fai,sitax))
+{
+while(*p - solve_T_follow( Pi,*c,w,fai,sitax) > detat)
+{
+*c = *c - detac;
+solveT(fp,detax,x0,solve_T_follow(2*Pi,*c,w,fai,sitax),w,p,fai,sitax,&linshiT);
+}
+}
+else
+{
+while(*p - solve_T_follow( Pi,*c,w,fai,sitax) < detat)
+{
+*c = *c + detac;
+solveT(fp,detax,x0,solve_T_follow(2*Pi,*c,w,fai,sitax),w,p,fai,sitax,&linshiT);
+}
+}
+if(sitax<=Pi)
+fprintf(fp,"%f %f\n",fai,linshiT);
+}
+void follow_data (FILE *fp,double sita /*Angle*/,double c,double w,double fai,double
+sitax)//Culculate the following datas
+{
+double T;
+double linshiT=0.0;
+while (2*Pi - sita > detat)
+{
+if(abs(sita-sitax)<detat/2.0)
+{
+linshiT = T;
+fprintf(fp,"%f %f\n",fai,linshiT);
+}
+T = solve_T_follow( sita,c,w,fai,sitax);
+sita = sita + detat;
+}
+}
+void find (FILE *fp,double fai,double w,double sitax)
+{
+double T0 = pow(1/(3*a*5.6*pow(10.0,-8)/C*Pi*2/w + 0.0),(double)1/3);
+double y1;
+double c = 0;
+find_c(fp,0.001,0.0,T0, w,&y1,&c,fai,sitax);
+follow_data(fp,Pi,c, w,fai,sitax);
+}
+int main ()
+{
+double w=6.576E-8;
+cout << "Please input the spin velocity w" << endl;
+cin >> w;
+double sitax = Pi+Pi/4*3;
+cout << "Please input the specific longitude sita"<<endl;
+cin >> sitax;
+while (sitax>360)
+{
+sitax = sitax - 360;
+}
+sitax = sitax/180.0*Pi;
+double fai=0.0;
+FILE *fp=fopen("e:\\UPC\\UPCX.txt","w");
+fprintf(fp,"sita T\n");
+fclose(fp);
+fp=fopen("e:\\UPC\\UPCX.txt","a+");
+cout << "Please waite...(Mabe several mimutes or hours...)"<<endl;
+while (fai<Pi/2.0)
+{
+find(fp,fai,w,sitax);
+fai=fai+detafai;
+}
+fclose(fp);
+return 0;
+}
