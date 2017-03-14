@@ -1,4 +1,4 @@
-计算特定经度温度分布
+//计算特定经度温度分布
 #include <iostream>
 using namespace std;
 #include <cmath>
@@ -98,10 +98,6 @@ cout << "The period of the planet is T = " << 2*Pi/w/3600<<"hours" << endl;
 }
 int main()
 {
-cout << "This progrem was used to solve the distribution of temperature in Problem B of
-University Physics Competition in 2013" << endl;
-cout << "Now it can be used to solve the distribution of temperature of a single light source
-illuminate graybody on specific latitude."<< endl<<endl<<endl;
 find();
 return 0;
 }
