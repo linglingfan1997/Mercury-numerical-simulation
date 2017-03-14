@@ -1,0 +1,107 @@
+计算特定经度温度分布
+#include <iostream>
+using namespace std;
+#include <cmath>
+#include <stdio.h>
+#define detac 0.00000000001//The variation of the constant c in the functions
+#define Pi 3.141592653589
+#define detat 0.001//The variation of the angle
+#define detafai 0.001//The variation of the angle
+#define C 21362799.26//The specific heat capacity of the plane
+#define a 0.65//The relative coefficient of radiation
+#define Ip 9092.5//The intensity of light
+#define double long double
+double solve_T_follow(double sita/*Angle*/,double c,double w)//Calculate T_follow
+{
+double T0;
+double o = 1/(3*a*5.6*pow(10.0,-8)/C*sita/w + c);
+T0 = pow(o,(double)1/3);
+return T0;
+}
+void solveT(FILE *fp,double detax,double x0/*fist value*/,double y0/*fist value*/,double
+w,double *p,double fai)//Calculate T and write datas
+{
+double y1 = y0;
+while(x0 - Pi < detax)
+{
+y1 = cos(fai)*0.92*Ip/C*sin(x0)*detax/w - pow(y1,4)*detax*a*5.6*pow(10.0,-8)/C/w +
+y1;
+fprintf(fp,"%f %f\n",(x0+detax),y1);
+x0=x0+detax;
+}
+*p=y1;
+}
+double find_c(double detax,double x0/*fist value*/,double y0/*fist value*/,double w,double
+*p,double c,double fai)//Find the constant
+{
+FILE *fp = fopen("UPC_data.txt","w");
+fprintf(fp,"The period of the planet is %f s",2*Pi/w);
+solveT(fp,detax,x0,y0,w,p,fai);
+fclose(fp);
+if(*p>solve_T_follow( Pi, c,w))
+{
+while(*p - solve_T_follow( Pi,c,w) > detat)
+{
+c = c - detac;
+FILE *fp = fopen("e:\\UPC\\UPCY.txt","w");
+fprintf (fp,"t T\n");
+solveT(fp,detax,x0,solve_T_follow(2*Pi,c,w),w,p,fai);
+fclose(fp);
+}
+}
+else
+{
+while(*p - solve_T_follow( Pi,c,w) < detat)
+{
+c = c + detac;
+FILE *fp = fopen("e:\\UPC\\UPCY.txt","w");
+fprintf (fp,"t T\n");
+solveT(fp,detax,x0,solve_T_follow(2*Pi,c,w),w,p,fai);
+fclose(fp);
+}
+}
+return c;
+}
+void follow_data(double sita/*Angle*/,double c,double w)//Culculate the following datas
+{
+FILE *fp = fopen("e:\\UPC\\UPCY.txt","a+");
+double T;
+while (2*Pi - sita > detat)
+{
+T = solve_T_follow( sita,c,w);
+fprintf(fp,"%f %f\n",sita,T);
+sita = sita + detat;
+}
+fclose(fp);
+}
+void find ()
+{
+double w=6.576E-8;
+cout << "Please input the spin velocity w" << endl;
+cin >> w;
+double fai = 0.0;
+cout << "Please input the specific longitude fai"<<endl;
+cin >> fai;
+while (fai>360)
+{
+fai = fai - 360;
+}
+fai = fai/180.0*Pi;
+double T0 = solve_T_follow(2*Pi,0.0,w);
+double y1;
+double c = 0;
+c =find_c(0.001,0.0,T0, w,&y1,c,fai);
+cout << "The const is c = " << c << endl;
+follow_data(Pi,c, w);
+cout << "The datas had been written in ""e:\\UPC\\UPCY.txt""" << endl;
+cout << "The period of the planet is T = " << 2*Pi/w/3600<<"hours" << endl;
+}
+int main()
+{
+cout << "This progrem was used to solve the distribution of temperature in Problem B of
+University Physics Competition in 2013" << endl;
+cout << "Now it can be used to solve the distribution of temperature of a single light source
+illuminate graybody on specific latitude."<< endl<<endl<<endl;
+find();
+return 0;
+}
